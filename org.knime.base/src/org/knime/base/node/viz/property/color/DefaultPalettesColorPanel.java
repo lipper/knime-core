@@ -56,11 +56,20 @@ import java.awt.event.MouseEvent;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
+
+import org.knime.base.node.viz.property.color.ColorManager2NodeModel.PaletteOption;
+import org.knime.core.data.DataTableSpec;
+import org.knime.core.node.InvalidSettingsException;
+import org.knime.core.node.NodeSettingsRO;
+import org.knime.core.node.NodeSettingsWO;
+import org.knime.core.node.NotConfigurableException;
 
 /**
  * A default panel to show two color palettes.
@@ -68,6 +77,12 @@ import javax.swing.colorchooser.AbstractColorChooserPanel;
  * @author Johannes Schweig, KNIME AG
  */
 final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
+
+    private final JRadioButton m_set1RadioButton = new JRadioButton();
+
+    private final JRadioButton m_set2RadioButton = new JRadioButton();
+
+    private final JRadioButton m_set3RadioButton = new JRadioButton();
 
     private final JButton m_set1Button = new JButton("Apply to columns");
 
@@ -86,6 +101,9 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
 
     /** Spacing between the individual elements of a palette. */
     private static final int PALETTE_ELEMENT_SPACING = 4;
+
+    /** Current setting of the palette option. */
+    private static PaletteOption m_paletteOption = null;
 
     /**
      * @param paletteSet1 the first, default color palette
@@ -147,6 +165,19 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
         JPanel set3Panel = new JPanel(new FlowLayout(FlowLayout.LEFT, PALETTE_ELEMENT_SPACING, 0));
         set3Panel.setAlignmentX(LEFT_ALIGNMENT);
 
+        // add radiobuttons
+        ButtonGroup bg = new ButtonGroup();
+        m_set1RadioButton.addActionListener(e -> updatePaletteOption(PaletteOption.SET1));
+        m_set2RadioButton.addActionListener(e -> updatePaletteOption(PaletteOption.SET2));
+        m_set3RadioButton.addActionListener(e -> updatePaletteOption(PaletteOption.SET3));
+        bg.add(m_set1RadioButton);
+        bg.add(m_set2RadioButton);
+        bg.add(m_set3RadioButton);
+        set1Panel.add(m_set1RadioButton);
+        set2Panel.add(m_set2RadioButton);
+        set3Panel.add(m_set3RadioButton);
+        // TODO attach
+        getColorSelectionModel().addChangeListener(e -> updatePaletteOption(PaletteOption.CUSTOM_SET));
         //add colored Panels
         for (String s : m_paletteSet1) {
             set1Panel.add(new PaletteElement(s, PALETTE_ELEMENT_SIZE));
@@ -197,6 +228,21 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
     }
 
     /**
+     * Updates the palette option with a new palette option
+     * @param po new palette option
+     */
+    private void updatePaletteOption(final PaletteOption po) {
+        if (m_paletteOption != po) {
+            if (po == PaletteOption.CUSTOM_SET) { // switching to custom set
+                showButtons(false, true);
+            } else if (m_paletteOption == PaletteOption.CUSTOM_SET) { // switching away from custom set
+                showButtons(true, false);
+            }
+            m_paletteOption = po;
+        }
+    }
+
+    /**
      * @param al1 the action listener for the first button
      * @param al2 the action listener for the second button
      * @param al3 the action listener for the third button
@@ -205,6 +251,9 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
         m_set1Button.addActionListener(al1);
         m_set2Button.addActionListener(al2);
         m_set3Button.addActionListener(al3);
+        m_set1RadioButton.addActionListener(al1);
+        m_set2RadioButton.addActionListener(al2);
+        m_set3RadioButton.addActionListener(al3);
     }
 
     /**
@@ -213,9 +262,6 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
     @Override
     public void setEnabled(final boolean enabled) {
         super.setEnabled(enabled);
-        m_set1Button.setVisible(enabled);
-        m_set2Button.setVisible(enabled);
-        m_set3Button.setVisible(enabled);
     }
 
     /**
@@ -264,5 +310,67 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
     @Override
     public void updateChooser() {
 
+    }
+
+    /**
+     * Saves the settings.
+     *
+     * @param settings the settings storage
+     */
+    void saveSettingsTo(final NodeSettingsWO settings) {
+        settings.addString(ColorManager2NodeModel.CFG_PALETTE_OPTION, m_paletteOption.getSettingsName());
+    }
+
+    /**
+     * Loads the settings.
+     *
+     * @param settings the settings provider
+     * @param specs the data table spec
+     * @throws NotConfigurableException if the stored new values option is not associated with a
+     *             <code>NewValueOption</code>
+     */
+    public void loadSettingsFrom(final NodeSettingsRO settings, final DataTableSpec[] specs)
+            throws NotConfigurableException {
+        try {
+            // get color mapping for unassigned colors
+            m_paletteOption = PaletteOption.getEnum(
+                settings.getString(ColorManager2NodeModel.CFG_PALETTE_OPTION,
+                    ColorManager2NodeModel.MISSING_CFG_OPTION.getSettingsName()));
+
+            switch (m_paletteOption) {
+                case SET1:
+                    m_set1RadioButton.setSelected(true);
+                    showButtons(true, false);
+                    break;
+                case SET2:
+                    m_set2RadioButton.setSelected(true);
+                    showButtons(true, false);
+                    break;
+                case SET3:
+                    m_set3RadioButton.setSelected(true);
+                    showButtons(true, false);
+                    break;
+                case CUSTOM_SET:
+                    showButtons(false, true);
+                    break;
+            }
+        } catch (InvalidSettingsException e) {
+            throw new NotConfigurableException(e.getMessage());
+        }
+    }
+
+    /**
+     * Shows the radiobuttons or the regular buttons or none in the panel.
+     * @param show_radio if radiobuttons should be shown
+     * @param show_buttons if regular buttons should be shown
+     */
+    void showButtons(final boolean show_radio, final boolean show_buttons) {
+        m_set1RadioButton.setVisible(show_radio);
+        m_set2RadioButton.setVisible(show_radio);
+        m_set3RadioButton.setVisible(show_radio);
+
+        m_set1Button.setVisible(show_buttons);
+        m_set2Button.setVisible(show_buttons);
+        m_set3Button.setVisible(show_buttons);
     }
 }

@@ -60,6 +60,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 
+import org.knime.base.node.viz.property.color.ColorManager2NodeModel.PaletteOption;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.property.ColorAttr;
 import org.knime.core.node.InvalidSettingsException;
@@ -180,9 +181,14 @@ final class ColorManager2DialogNominal extends JPanel {
      * @param column the column name
      * @param set the set of possible values for this column
      */
-    void add(final String column, final Set<DataCell> set) {
+    void add(final String column, final Set<DataCell> set, final PaletteOption po) {
+        System.out.println(set);
         if (set != null && !set.isEmpty()) {
-            m_map.put(column, createColorMapping(set));
+            Map<DataCell, ColorAttr> map = new LinkedHashMap<DataCell, ColorAttr>();
+            for (DataCell cell : set) {
+                map.put(cell, ColorAttr.getInstance(Color.decode("#000000")));
+            }
+            m_map.put(column, map);
         }
     }
 
@@ -192,17 +198,27 @@ final class ColorManager2DialogNominal extends JPanel {
      * @param set possible values
      * @return a map of possible value to color
      */
-    static final Map<DataCell, ColorAttr> createColorMapping(final Set<DataCell> set) {
+    static final Map<DataCell, ColorAttr> createColorMapping(final Set<DataCell> set, final PaletteOption po) {
         if (set == null) {
             return Collections.EMPTY_MAP;
         }
         Map<DataCell, ColorAttr> map = new LinkedHashMap<DataCell, ColorAttr>();
         int idx = 0;
+        String[] palette = null;
+        switch(po) {
+            case SET1: palette = ColorManager2NodeDialogPane.PALETTE_SET1;
+            break;
+            case SET2: palette = ColorManager2NodeDialogPane.PALETTE_SET2;
+            break;
+            case SET3: palette = ColorManager2NodeDialogPane.PALETTE_SET3;
+            break;
+        }
+        assert(palette != null);
         for (DataCell cell : set) {
-            if (idx >= ColorManager2NodeDialogPane.PALETTE_SET1.length) {
+            if (idx >= palette.length) {
                 idx = 0;
             }
-            Color color = Color.decode(ColorManager2NodeDialogPane.PALETTE_SET1[idx]);
+            Color color = Color.decode(palette[idx]);
             map.put(cell, ColorAttr.getInstance(color));
             idx++;
         }

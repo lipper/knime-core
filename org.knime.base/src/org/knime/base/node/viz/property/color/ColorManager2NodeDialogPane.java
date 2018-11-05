@@ -60,6 +60,7 @@ import javax.swing.JRadioButton;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.colorchooser.DefaultColorSelectionModel;
 
+import org.knime.base.node.viz.property.color.ColorManager2NodeModel.PaletteOption;
 import org.knime.core.data.DataCell;
 import org.knime.core.data.DataColumnDomain;
 import org.knime.core.data.DataColumnSpec;
@@ -254,13 +255,22 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
             LOGGER.debug("Nominal/Range selection flag" + " not available.");
         }
 
+        m_palettesPanel.loadSettingsFrom(settings, specs);
         // find last columns for nominal values and numeric ranges defined
         for (int i = 0; i < specs[0].getNumColumns(); i++) {
             DataColumnSpec cspec = specs[0].getColumnSpec(i);
             DataColumnDomain domain = cspec.getDomain();
             // nominal values defined
             if (domain.hasValues()) {
-                m_nominal.add(cspec.getName(), domain.getValues());
+                PaletteOption po;
+                try {
+                    po = PaletteOption.getEnum(settings.getString(ColorManager2NodeModel.CFG_PALETTE_OPTION));
+                } catch (InvalidSettingsException e) {
+                    po = ColorManager2NodeModel.MISSING_CFG_OPTION;
+                    throw new NotConfigurableException(e.getMessage());
+                    // if not found, set to missing cfg option for backwards compatibility
+                }
+                m_nominal.add(cspec.getName(), domain.getValues(), po);
                 // select last possible nominal column
                 hasNominals = i;
             }
@@ -361,6 +371,7 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) throws InvalidSettingsException {
         assert (settings != null);
+        m_palettesPanel.saveSettingsTo(settings);
         String cell = getSelectedColumn();
         settings.addString(ColorManager2NodeModel.SELECTED_COLUMN, cell);
         if (cell != null) {
@@ -407,13 +418,13 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         }
         if (hasNominal) {
             m_buttonNominal.setEnabled(true);
-            m_palettesPanel.setEnabled(true);
+//            m_palettesPanel.showButtons(true, false);
             if (nominal || !hasRanges) {
                 m_buttonNominal.setSelected(true);
             }
         } else {
             m_buttonNominal.setEnabled(false);
-            m_palettesPanel.setEnabled(false);
+            m_palettesPanel.showButtons(false, false);
         }
     }
 

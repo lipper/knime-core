@@ -47,8 +47,10 @@ package org.knime.base.node.viz.property.color;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,10 +91,95 @@ import org.knime.core.node.port.viewproperty.ColorHandlerPortObject;
  */
 class ColorManager2NodeModel extends NodeModel {
 
+    /**
+     * Enum representing various options to deal with values that have not colors assigned yet.
+     *
+     * @author Mark Ortmann, KNIME GmbH, Berlin, Germany
+     */
+
+    enum PaletteOption {
+
+            /** Use user-defined set. */
+            CUSTOM_SET("custom_set", "Custom Set"),
+
+            /** Use color palette 1. */
+            SET1("set_1", "Use Set 1"),
+
+            /** Use color palette 2. */
+            SET2("set_2", "Use Set 2"),
+
+            /** Use color palette 3. */
+            SET3("set_3", "Use Set 3");
+
+        /** Missing name exception. */
+        private static final String NAME_MUST_NOT_BE_NULL = "Name must not be null";
+
+        /** IllegalArgumentException prefix. */
+        private static final String ARGUMENT_EXCEPTION_PREFIX = "No PaletteOption constant with name: ";
+
+        /** The ui representation of this enum. */
+        private final String m_ui;
+
+        /** The settings representation of this enum. */
+        private final String m_settings;
+
+        /**
+         * Constructor.
+         *
+         * @param settings the settings name
+         * @param ui the ui name
+         */
+        private PaletteOption(final String settings, final String ui) {
+            m_settings = settings;
+            m_ui = ui;
+        }
+
+        /**
+         * Returns the name used for loading and saving.
+         *
+         * @return the settings name
+         */
+        String getSettingsName() {
+            return m_settings;
+        }
+
+        /**
+         * Returns the name used in the ui.
+         *
+         * @return the ui name
+         */
+        @Override
+        public String toString() {
+            return m_ui;
+        }
+
+        /**
+         * Returns the {@link PaletteOption} represented by the provided name, which can either be the ui or settings
+         * name.
+         *
+         * @param name the ui or settings name of the {@link PaletteOption}
+         * @return the corresponding {@link PaletteOption}
+         * @throws InvalidSettingsException if the given name is not associated with an {@link PaletteOption} value
+         */
+        static PaletteOption getEnum(final String name) throws InvalidSettingsException {
+            if (name == null) {
+                throw new InvalidSettingsException(NAME_MUST_NOT_BE_NULL);
+            }
+            return Arrays.stream(values()).filter(t -> t.m_settings.equals(name) || t.m_ui.equals(name)).findFirst()
+                .orElseThrow(() -> new InvalidSettingsException(ARGUMENT_EXCEPTION_PREFIX + name));
+        }
+    }
+
     /** The selected column. */
     private String m_column;
     /** true if color ranges, false for discrete colors. */
     private boolean m_isNominal;
+
+    /** Option for using palettes. For backwards-compatibility the default option is USE_STORED_VALUES. */
+    private PaletteOption m_paletteOption = PaletteOption.SET1;
+
+    /** The missing config palette option. */
+    static final PaletteOption MISSING_CFG_OPTION = PaletteOption.CUSTOM_SET;
     /** Stores the mapping from string column value to color. */
     private final Map<DataCell, ColorAttr> m_map;
 
@@ -121,6 +208,8 @@ class ColorManager2NodeModel extends NodeModel {
     /** The maximum column value for range color settings. */
     static final String MAX_COLOR = "max_color";
 
+    /** Palette option config key. */
+    static final String CFG_PALETTE_OPTION = "palette_option";
     /** Type of color setting. */
     static final String IS_NOMINAL = "is_nominal";
 
@@ -173,7 +262,7 @@ class ColorManager2NodeModel extends NodeModel {
                 inSpec.getColumnSpec(column).getDomain().getValues();
             m_mapGuess.clear();
             m_mapGuess.putAll(
-                    ColorManager2DialogNominal.createColorMapping(set));
+                    ColorManager2DialogNominal.createColorMapping(set, m_paletteOption));
             colorHandler = createNominalColorHandler(m_mapGuess);
             DataTableSpec newSpec = getOutSpec(inSpec, column, colorHandler);
             BufferedDataTable changedSpecTable =
@@ -188,9 +277,15 @@ class ColorManager2NodeModel extends NodeModel {
         // find column index
         int columnIndex = inSpec.findColumnIndex(m_column);
         // create new column spec based on color settings
-        DataColumnSpec cspec = inSpec.getColumnSpec(m_column);
+        final DataColumnSpec cspec = inSpec.getColumnSpec(m_column);
         if (m_isNominal) {
-            colorHandler = createNominalColorHandler(m_map);
+            if (m_paletteOption.equals(PaletteOption.CUSTOM_SET)) {
+                colorHandler = createNominalColorHandler(m_map);
+            } else {
+                final Set<DataCell> set = new LinkedHashSet<>(cspec.getDomain().getValues());
+                m_map.putAll(ColorManager2DialogNominal.createColorMapping(set, m_paletteOption));
+                colorHandler = createNominalColorHandler(m_map);
+            }
         } else {
             DataColumnDomain dom = cspec.getDomain();
             DataCell lower, upper;
@@ -269,7 +364,7 @@ class ColorManager2NodeModel extends NodeModel {
                     getDomain().getValues();
             m_mapGuess.clear();
             m_mapGuess.putAll(
-                    ColorManager2DialogNominal.createColorMapping(set));
+                    ColorManager2DialogNominal.createColorMapping(set, m_paletteOption));
             ColorHandler colorHandler = createNominalColorHandler(m_mapGuess);
             DataTableSpec dataSpec = getOutSpec(spec, column, colorHandler);
             DataTableSpec modelSpec =
@@ -296,7 +391,7 @@ class ColorManager2NodeModel extends NodeModel {
                         + "execute predecessor or add Binner.");
             }
             // check if the mapping values and the possible values match
-            if (!m_map.keySet().containsAll(list)) {
+            if (m_paletteOption.equals(PaletteOption.CUSTOM_SET) && !m_map.keySet().containsAll(list)) {
                 throw new InvalidSettingsException(
                        "Color mapping does not match possible values.");
             }
@@ -348,6 +443,8 @@ class ColorManager2NodeModel extends NodeModel {
     protected void loadValidatedSettingsFrom(final NodeSettingsRO settings)
             throws InvalidSettingsException {
         assert (settings != null);
+        // load settings for choosing palettes
+        m_paletteOption = PaletteOption.getEnum(settings.getString(CFG_PALETTE_OPTION, MISSING_CFG_OPTION.getSettingsName()));
         // remove all color mappings
         m_map.clear();
         // read settings and write into the map
@@ -382,6 +479,7 @@ class ColorManager2NodeModel extends NodeModel {
      */
     @Override
     protected void saveSettingsTo(final NodeSettingsWO settings) {
+        settings.addString(CFG_PALETTE_OPTION, m_paletteOption.getSettingsName());
         if (m_column != null) {
             settings.addString(SELECTED_COLUMN, m_column);
             settings.addBoolean(IS_NOMINAL, m_isNominal);
