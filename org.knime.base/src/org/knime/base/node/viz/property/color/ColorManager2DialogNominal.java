@@ -103,7 +103,7 @@ final class ColorManager2DialogNominal extends JPanel {
     }
 
     /**
-     * Called is a new column is selected. If the column is null every
+     * Called if a new column is selected.
      *
      * @param column the new selected column
      * @return <code>true</code>, if the call caused any changes
