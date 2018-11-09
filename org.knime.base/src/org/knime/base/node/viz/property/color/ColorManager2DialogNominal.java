@@ -268,11 +268,22 @@ final class ColorManager2DialogNominal extends JPanel {
      *
      * @param settings to read from
      * @param column the selected column
+     * @throws InvalidSettingsException
      */
     void loadSettings(final NodeSettingsRO settings, final String column) {
         if (column == null) {
             return;
         }
+        // load palette option from settings
+        PaletteOption po = null;
+        try {
+            po = PaletteOption.getEnum(
+                    settings.getString(ColorManager2NodeModel.CFG_PALETTE_OPTION,
+                        ColorManager2NodeModel.MISSING_CFG_OPTION.getSettingsName()));
+        } catch (InvalidSettingsException e) {
+            System.err.println(e);
+        }
+
         DataCell[] vals = settings.getDataCellArray(ColorManager2NodeModel.VALUES, (DataCell[])null);
         if (vals == null) {
             return;

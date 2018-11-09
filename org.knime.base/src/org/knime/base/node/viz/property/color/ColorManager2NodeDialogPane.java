@@ -50,6 +50,8 @@ import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -122,12 +124,17 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
     /** Colorblind safe palette, contributed from Color Universal Design, http://jfly.iam.u-tokyo.ac.jp/color/. */
     static final String[] PALETTE_SET3 = {"#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"};
 
+    /** Stores the palette option settings for the columns.*/
+    private final Map<String, PaletteOption> m_columnPaletteOptions;
+
     /**
      * Creates a new color manager dialog; all color settings are empty.
      */
     ColorManager2NodeDialogPane() {
         // create new super node dialog with name
         super();
+
+        m_columnPaletteOptions = new LinkedHashMap<String, PaletteOption>();
 
         m_columns.setRenderer(new DataColumnSpecListCellRenderer());
         JPanel columnPanel = new JPanel(new BorderLayout());
@@ -258,6 +265,7 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         }
 
         m_palettesPanel.loadSettingsFrom(settings, specs);
+
         // find last columns for nominal values and numeric ranges defined
         for (int i = 0; i < specs[0].getNumColumns(); i++) {
             DataColumnSpec cspec = specs[0].getColumnSpec(i);
@@ -358,10 +366,15 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
             }
         }
 
+        // set column palette option
+        m_columnPaletteOptions.put(target, m_palettesPanel.getPaletteOption());
+        System.out.println("lSF: " + getSelectedColumn() + "|" + m_palettesPanel.getPaletteOption());
+
         // inform about column change
         columnChanged(target, nominalSelected);
         // register column change listener
         m_columns.addItemListener(this);
+
     }
 
     /**
@@ -425,7 +438,17 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         }
         if (hasNominal) {
             m_buttonNominal.setEnabled(true);
+            // get palette option of the new column and store it in map
+            PaletteOption po = m_columnPaletteOptions.get(cell);
+            if (po == null) { // palette option not stored, use default
+                po = PaletteOption.SET1;
+            }
+            m_columnPaletteOptions.put(cell, po);
+            System.out.println("cC: " + m_columnPaletteOptions);
+            System.out.println("cC: " + cell + "/" + po);
+            m_palettesPanel.setPaletteOption(po);
             m_palettesPanel.showButtons();
+
             if (nominal || !hasRanges) {
                 m_buttonNominal.setSelected(true);
             }

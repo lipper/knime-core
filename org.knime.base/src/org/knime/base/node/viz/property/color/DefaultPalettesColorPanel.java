@@ -167,9 +167,9 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
 
         // add radiobuttons
         ButtonGroup bg = new ButtonGroup();
-        m_set1RadioButton.addActionListener(e -> updatePaletteOption(PaletteOption.SET1));
-        m_set2RadioButton.addActionListener(e -> updatePaletteOption(PaletteOption.SET2));
-        m_set3RadioButton.addActionListener(e -> updatePaletteOption(PaletteOption.SET3));
+        m_set1RadioButton.addActionListener(e -> setPaletteOption(PaletteOption.SET1));
+        m_set2RadioButton.addActionListener(e -> setPaletteOption(PaletteOption.SET2));
+        m_set3RadioButton.addActionListener(e -> setPaletteOption(PaletteOption.SET3));
         bg.add(m_set1RadioButton);
         bg.add(m_set2RadioButton);
         bg.add(m_set3RadioButton);
@@ -177,7 +177,10 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
         set2Panel.add(m_set2RadioButton);
         set3Panel.add(m_set3RadioButton);
         // Switch to Custom Set when a value is manually set
-        getColorSelectionModel().addChangeListener(e -> updatePaletteOption(PaletteOption.CUSTOM_SET));
+        getColorSelectionModel().addChangeListener(e -> {
+            setPaletteOption(PaletteOption.CUSTOM_SET);
+            showButtons();
+        });
         //add colored Panels
         for (String s : m_paletteSet1) {
             set1Panel.add(new PaletteElement(s, PALETTE_ELEMENT_SIZE));
@@ -227,20 +230,6 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
 
     }
 
-    /**
-     * Updates the palette option with a new palette option
-     * @param po new palette option
-     */
-    private void updatePaletteOption(final PaletteOption po) {
-        if (m_paletteOption != po) {
-            if (po == PaletteOption.CUSTOM_SET) { // switching to custom set
-                showButtons(false, true);
-            } else if (m_paletteOption == PaletteOption.CUSTOM_SET) { // switching away from custom set
-                showButtons(true, false);
-            }
-            m_paletteOption = po;
-        }
-    }
 
     /**
      * @param al1 the action listener for the first button
@@ -349,6 +338,7 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
      * @param show_buttons if regular buttons should be shown
      */
     void showButtons() {
+//        System.out.println("sB: " + m_paletteOption);
         switch (m_paletteOption) {
                 case SET1:
                     m_set1RadioButton.setSelected(true);
@@ -374,6 +364,7 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
      * @param show_buttons if regular buttons should be shown
      */
     void showButtons(final boolean show_radio, final boolean show_buttons) {
+//        System.out.println("sB: " + show_radio + "/" + show_buttons);
         m_set1RadioButton.setVisible(show_radio);
         m_set2RadioButton.setVisible(show_radio);
         m_set3RadioButton.setVisible(show_radio);
@@ -382,4 +373,20 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
         m_set2Button.setVisible(show_buttons);
         m_set3Button.setVisible(show_buttons);
     }
+
+    /**
+     * @return the palette option of the currently selected column
+     */
+    public PaletteOption getPaletteOption() {
+        return m_paletteOption;
+    }
+
+    /**
+     * Updates the palette option with a new palette option.
+     * @param po new palette option
+     */
+    void setPaletteOption(final PaletteOption po) {
+        m_paletteOption = po;
+    }
+
 }
