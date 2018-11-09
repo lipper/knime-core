@@ -184,12 +184,13 @@ final class ColorManager2DialogNominal extends JPanel {
      * @param set the set of possible values for this column
      */
     void add(final String column, final Set<DataCell> set, final PaletteOption po) {
-        System.out.println(set);
         if (set != null && !set.isEmpty()) {
-            Map<DataCell, ColorAttr> map = new LinkedHashMap<DataCell, ColorAttr>();
-            for (DataCell cell : set) {
-                map.put(cell, ColorAttr.getInstance(Color.decode("#000000")));
-            }
+//            Map<DataCell, ColorAttr> map = new LinkedHashMap<DataCell, ColorAttr>();
+            Map<DataCell, ColorAttr> map = createColorMapping(set, po);
+//            for (DataCell cell : set) {
+//                map.put(cell, ColorAttr.getInstance(Color.BLACK));
+//                map.put(cell, null);
+//            }
             m_map.put(column, map);
         }
     }
@@ -213,6 +214,8 @@ final class ColorManager2DialogNominal extends JPanel {
             case SET2: palette = ColorManager2NodeDialogPane.PALETTE_SET2;
             break;
             case SET3: palette = ColorManager2NodeDialogPane.PALETTE_SET3;
+            break;
+            case CUSTOM_SET: palette = new String[] {"#000000"};
             break;
         }
         assert(palette != null);
@@ -280,6 +283,10 @@ final class ColorManager2DialogNominal extends JPanel {
         }
         for (int i = 0; i < vals.length; i++) {
             if (map.containsKey(vals[i])) {
+                if (map.get(vals[i]) == null) {
+                    m_alpha = 255; // TODO 255 by default
+                    return;
+                }
                 Color dftColor = map.get(vals[i]).getColor();
                 int c = settings.getInt(vals[i].toString(), dftColor.getRGB());
                 Color color = new Color(c, true);

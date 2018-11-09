@@ -267,7 +267,7 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
                     po = PaletteOption.getEnum(settings.getString(ColorManager2NodeModel.CFG_PALETTE_OPTION));
                 } catch (InvalidSettingsException e) {
                     po = ColorManager2NodeModel.MISSING_CFG_OPTION;
-                    throw new NotConfigurableException(e.getMessage());
+                    throw new NotConfigurableException("X" + e.getMessage());
                     // if not found, set to missing cfg option for backwards compatibility
                 }
                 m_nominal.add(cspec.getName(), domain.getValues(), po);
@@ -418,7 +418,7 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         }
         if (hasNominal) {
             m_buttonNominal.setEnabled(true);
-//            m_palettesPanel.showButtons(true, false);
+            m_palettesPanel.showButtons();
             if (nominal || !hasRanges) {
                 m_buttonNominal.setSelected(true);
             }

@@ -176,7 +176,7 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
         set1Panel.add(m_set1RadioButton);
         set2Panel.add(m_set2RadioButton);
         set3Panel.add(m_set3RadioButton);
-        // TODO attach
+        // Switch to Custom Set when a value is manually set
         getColorSelectionModel().addChangeListener(e -> updatePaletteOption(PaletteOption.CUSTOM_SET));
         //add colored Panels
         for (String s : m_paletteSet1) {
@@ -337,7 +337,19 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
                 settings.getString(ColorManager2NodeModel.CFG_PALETTE_OPTION,
                     ColorManager2NodeModel.MISSING_CFG_OPTION.getSettingsName()));
 
-            switch (m_paletteOption) {
+            showButtons();
+        } catch (InvalidSettingsException e) {
+            throw new NotConfigurableException(e.getMessage());
+        }
+    }
+
+    /**
+     * Shows the radiobuttons or the regular buttons according to the current palette option.
+     * @param show_radio if radiobuttons should be shown
+     * @param show_buttons if regular buttons should be shown
+     */
+    void showButtons() {
+        switch (m_paletteOption) {
                 case SET1:
                     m_set1RadioButton.setSelected(true);
                     showButtons(true, false);
@@ -354,9 +366,6 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
                     showButtons(false, true);
                     break;
             }
-        } catch (InvalidSettingsException e) {
-            throw new NotConfigurableException(e.getMessage());
-        }
     }
 
     /**
