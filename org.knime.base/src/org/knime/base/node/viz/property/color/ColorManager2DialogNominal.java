@@ -74,14 +74,16 @@ import org.knime.core.node.NodeSettingsWO;
  */
 final class ColorManager2DialogNominal extends JPanel {
 
+    private static final long serialVersionUID = 1L;
+
     /** Keeps mapping from data cell name to color. */
     private final Map<String, Map<DataCell, ColorAttr>> m_map;
 
     /** Keeps the all possible column values. */
-    private final JList m_columnValues;
+    private final JList<ColorManager2Icon> m_columnValues;
 
     /** list model for column values. */
-    private final DefaultListModel m_columnModel;
+    private final DefaultListModel<ColorManager2Icon> m_columnModel;
 
     private int m_alpha = 255;
 
@@ -95,8 +97,8 @@ final class ColorManager2DialogNominal extends JPanel {
         m_map = new LinkedHashMap<String, Map<DataCell, ColorAttr>>();
 
         // create list for possible column values
-        m_columnModel = new DefaultListModel();
-        m_columnValues = new JList(m_columnModel);
+        m_columnModel = new DefaultListModel<ColorManager2Icon>();
+        m_columnValues = new JList<ColorManager2Icon>(m_columnModel);
         m_columnValues.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         m_columnValues.setCellRenderer(new ColorManager2IconRenderer());
         super.add(new JScrollPane(m_columnValues));
@@ -200,7 +202,7 @@ final class ColorManager2DialogNominal extends JPanel {
      */
     static final Map<DataCell, ColorAttr> createColorMapping(final Set<DataCell> set, final PaletteOption po) {
         if (set == null) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
         Map<DataCell, ColorAttr> map = new LinkedHashMap<DataCell, ColorAttr>();
         int idx = 0;
@@ -245,7 +247,7 @@ final class ColorManager2DialogNominal extends JPanel {
         if (len > 0) {
             DataCell[] vals = new DataCell[len];
             for (int i = 0; i < m_columnModel.getSize(); i++) {
-                ColorManager2Icon icon = (ColorManager2Icon)m_columnModel.getElementAt(i);
+                ColorManager2Icon icon = m_columnModel.getElementAt(i);
                 vals[i] = icon.getCell();
                 Color c = icon.getColor();
                 c = new Color(c.getRed(), c.getGreen(), c.getBlue(), m_alpha);
