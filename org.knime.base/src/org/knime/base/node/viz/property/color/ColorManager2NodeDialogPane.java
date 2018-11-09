@@ -92,7 +92,7 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
     private static final NodeLogger LOGGER = NodeLogger.getLogger(ColorManager2NodeDialogPane.class);
 
     /** Keeps all columns. */
-    private final JComboBox m_columns = new JComboBox();
+    private final JComboBox<DataColumnSpec> m_columns = new JComboBox<DataColumnSpec>();
 
     /** Nominal column. */
     private final JRadioButton m_buttonNominal = new JRadioButton("Nominal");
@@ -142,6 +142,8 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         // Overwrite default color selection model to throw color event even if the color is the same and no
         // event was created.
         final JColorChooser jcc = new JColorChooser(new DefaultColorSelectionModel() {
+            private static final long serialVersionUID = 1L;
+
             /**
              * @param color to set.
              * @see DefaultColorSelectionModel#setSelectedColor(java.awt.Color)
@@ -405,6 +407,11 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         columnChanged(cell, true);
     }
 
+    /**
+     * Switches the nominal and range radiobuttons if needed and updates the buttons in the palettes panel.
+     * @param cell name of the column to switch to
+     * @param nominal if the column is nominal (true) or range (false)
+     */
     private void columnChanged(final String cell, final boolean nominal) {
         boolean hasRanges = m_range.select(cell);
         boolean hasNominal = m_nominal.select(cell);
