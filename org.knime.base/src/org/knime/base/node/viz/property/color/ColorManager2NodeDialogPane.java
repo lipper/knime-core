@@ -61,6 +61,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.colorchooser.DefaultColorSelectionModel;
+import javax.swing.event.ChangeListener;
 
 import org.knime.base.node.viz.property.color.ColorManager2NodeModel.PaletteOption;
 import org.knime.core.data.DataCell;
@@ -172,7 +173,16 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
         final ActionListener al1 = e -> m_nominal.updateWithPalette(getSelectedColumn(), PALETTE_SET1);
         final ActionListener al2 = e -> m_nominal.updateWithPalette(getSelectedColumn(), PALETTE_SET2);
         final ActionListener al3 = e -> m_nominal.updateWithPalette(getSelectedColumn(), PALETTE_SET3);
-        m_palettesPanel.addActionListeners(al1, al2, al3);
+        final ActionListener al4 = e -> m_columnPaletteOptions.put(getSelectedColumn(), PaletteOption.SET1);
+        final ActionListener al5 = e -> m_columnPaletteOptions.put(getSelectedColumn(), PaletteOption.SET2);
+        final ActionListener al6 = e -> m_columnPaletteOptions.put(getSelectedColumn(), PaletteOption.SET3);
+        final ChangeListener cl1 = e -> {
+            if (getSelectedColumn() != null) {
+                m_columnPaletteOptions.put(getSelectedColumn(), PaletteOption.CUSTOM_SET);
+                System.out.println("CM2NDP: " + getSelectedColumn() + " CUSTOM_SET");
+            }
+        };
+        m_palettesPanel.addListeners(al1, al2, al3, al4, al5, al6, cl1);
         // rearrange order of panels
         AbstractColorChooserPanel[] oldPanels = jcc.getChooserPanels();
         AbstractColorChooserPanel[] newPanels = new AbstractColorChooserPanel[oldPanels.length + 2];
@@ -280,7 +290,7 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
                     throw new NotConfigurableException("X" + e.getMessage());
                     // if not found, set to missing cfg option for backwards compatibility
                 }
-                m_nominal.add(cspec.getName(), domain.getValues(), po);
+                m_nominal.add(cspec.getName(), domain.getValues(), PaletteOption.SET1);
                 // select last possible nominal column
                 hasNominals = i;
             }
@@ -445,7 +455,6 @@ final class ColorManager2NodeDialogPane extends NodeDialogPane implements ItemLi
             }
             m_columnPaletteOptions.put(cell, po);
             System.out.println("cC: " + m_columnPaletteOptions);
-            System.out.println("cC: " + cell + "/" + po);
             m_palettesPanel.setPaletteOption(po);
             m_palettesPanel.showButtons();
 

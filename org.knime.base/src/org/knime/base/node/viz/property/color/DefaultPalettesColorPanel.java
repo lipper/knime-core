@@ -63,6 +63,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.event.ChangeListener;
 
 import org.knime.base.node.viz.property.color.ColorManager2NodeModel.PaletteOption;
 import org.knime.core.data.DataTableSpec;
@@ -95,6 +96,9 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
     private final String[] m_paletteSet2;
 
     private final String[] m_paletteSet3;
+
+    /** ChangeListener if a color changes manually. */
+    private ChangeListener m_cl1;
 
     /** Size of the individual elements of a palette. */
     private static final int PALETTE_ELEMENT_SIZE = 20;
@@ -178,9 +182,15 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
         set3Panel.add(m_set3RadioButton);
         // Switch to Custom Set when a value is manually set
         getColorSelectionModel().addChangeListener(e -> {
-            setPaletteOption(PaletteOption.CUSTOM_SET);
-            showButtons();
+            // if either the radiobuttons or the regular buttons are visible -> nominal column
+            // TODO replace crude solution
+            if (m_set1RadioButton.isVisible() || m_set1Button.isVisible()) {
+                setPaletteOption(PaletteOption.CUSTOM_SET);
+                showButtons();
+                System.out.println("DPCP: ");
+            }
         });
+        getColorSelectionModel().addChangeListener(m_cl1);
         //add colored Panels
         for (String s : m_paletteSet1) {
             set1Panel.add(new PaletteElement(s, PALETTE_ELEMENT_SIZE));
@@ -235,14 +245,23 @@ final class DefaultPalettesColorPanel extends AbstractColorChooserPanel {
      * @param al1 the action listener for the first button
      * @param al2 the action listener for the second button
      * @param al3 the action listener for the third button
+     * @param al4 the action listener for the first radio button
+     * @param al5 the action listener for the second radio button
+     * @param al6 the action listener for the third radio button
+     * @param cl1 the change listener for a change of a color mapping
      */
-    void addActionListeners(final ActionListener al1, final ActionListener al2, final ActionListener al3) {
+    void addListeners(final ActionListener al1, final ActionListener al2, final ActionListener al3, final ActionListener al4, final ActionListener al5, final ActionListener al6, final ChangeListener cl1) {
         m_set1Button.addActionListener(al1);
         m_set2Button.addActionListener(al2);
         m_set3Button.addActionListener(al3);
         m_set1RadioButton.addActionListener(al1);
         m_set2RadioButton.addActionListener(al2);
         m_set3RadioButton.addActionListener(al3);
+        m_set1RadioButton.addActionListener(al4);
+        m_set2RadioButton.addActionListener(al5);
+        m_set3RadioButton.addActionListener(al6);
+
+        m_cl1 = cl1;
     }
 
     /**

@@ -193,6 +193,7 @@ final class ColorManager2DialogNominal extends JPanel {
 //            }
             m_map.put(column, map);
         }
+        System.out.println("add: " + set + "|" + po);
     }
 
     /**
@@ -202,6 +203,7 @@ final class ColorManager2DialogNominal extends JPanel {
      * @return a map of possible value to color
      */
     static final Map<DataCell, ColorAttr> createColorMapping(final Set<DataCell> set, final PaletteOption po) {
+        System.out.println("cCM: " + set + "|" + po);
         if (set == null) {
             return Collections.emptyMap();
         }
@@ -216,6 +218,7 @@ final class ColorManager2DialogNominal extends JPanel {
             case SET3: palette = ColorManager2NodeDialogPane.PALETTE_SET3;
             break;
             case CUSTOM_SET: palette = new String[] {"#000000"};
+                //palette = ColorManager2NodeDialogPane.PALETTE_SET1;
             break;
         }
         assert(palette != null);
