@@ -304,7 +304,8 @@ class NumericalAttributeModel extends AttributeModel {
             //with a very low variance the probability is > 1 which might result
             //in a number overflow for many of such columns like described
             //in forum post http://www.knime.org/node/949
-            final double prob = Math.exp(-(diff * diff / m_probabilityDenominator));
+            final double prob = Math.exp(-(diff * diff / m_probabilityDenominator))
+                    / Math.sqrt(Math.PI * m_probabilityDenominator);
             if (prob < probabilityThreshold) {
                 return probabilityThreshold;
             }
